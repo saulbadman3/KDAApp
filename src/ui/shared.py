@@ -29,12 +29,16 @@ class StatusBadge(ctk.CTkLabel):
 
     def granted(self):
         self.configure(text="ACCESS GRANTED", fg_color="#14532d", text_color="#4ade80")
+    
+    def registered(self):
+        self.configure(text="USER REGISTERED", fg_color="#14532d", text_color="#4ade80")
+
+    def deny_register(self):
+        self.configure(text="REGISTRATION ERROR", fg_color="#450a0a", text_color="#f87171")
 
     def denied(self):
         self.configure(text="ACCESS DENIED", fg_color="#450a0a", text_color="#f87171")
 
-    def wrong(self):
-        self.configure(text="WRONG PASSPHRASE", fg_color="#451a03", text_color=C_WARN)
 
 class KeyEntry(ctk.CTkEntry):
     def __init__(self, master, on_submit, **kw):

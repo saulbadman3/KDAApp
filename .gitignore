@@ -11,3 +11,4 @@ output/
 *.kda
 .vscode/
 *.7z
+*.json
