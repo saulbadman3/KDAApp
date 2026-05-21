@@ -67,18 +67,15 @@ class TrainingPage(ctk.CTkFrame):
             return
 
         tims = self.entry.timings[:len(PASSPHRASE)]
-
         if len(tims) < len(PASSPHRASE) - 1:
             self.status.configure(text="Too few keystrokes, try again.", text_color=C_WARN)
             self.entry.reset()
             return
 
         n_keys = len(PASSPHRASE)
-
         dwell = np.array([t["dwell"] for t in tims], dtype=float)
         flight = np.array([tims[i]["press_time"] - tims[i-1]["release_time"] for i in range(1, len(tims))], dtype=float)
         flight = np.maximum(flight, 0)
-
         feats = np.concatenate([dwell, flight])
 
         expected = n_keys + (n_keys - 1)
@@ -96,10 +93,8 @@ class TrainingPage(ctk.CTkFrame):
         self.cnt_lbl.configure(text=f"{n} / {MIN_TRAIN} attempts")
         self.pct_lbl.configure(text=f"{int(pct*100)}%")
 
-        self._log(f"[{n:02d}] dwell = {len(dwell)}; flight = {len(flight)}; mean_dwell = {np.mean(dwell):.1f} ms; mean_flight = {np.mean(flight):.1f} ms")
-
+        self._log(f"[{n:02d}] Recorded: mean_dwell = {np.mean(dwell):.1f} ms; mean_flight = {np.mean(flight):.1f} ms")
         self.status.configure(text="Ready to save" if n >= MIN_TRAIN else f"{n} attempt recorded", text_color=C_SUCCESS if n >= MIN_TRAIN else C_TEXT2)
-
         self.entry.reset()
 
     def _save(self):
@@ -107,6 +102,15 @@ class TrainingPage(ctk.CTkFrame):
             messagebox.showwarning("Not enough data", f"Need at least {MIN_TRAIN} attempts (have {len(self.attempts)}).")
             return
         prof = build_profile(self.attempts)
+
+        mask = prof["feature_mask"]
+        active_features = int(sum(mask))
+        total_features = len(mask)
+        
+        self._log(f"--- FEATURE SELECTION REPORT ---")
+        self._log(f"Active stable features (CV < 0.3): {active_features} of {total_features}")
+        self._log(f"Feature Mask: {mask}")
+        self._log(f"--------------------------------")
         print(prof)
         path = filedialog.asksaveasfilename(defaultextension=".kda",
             filetypes=[("KDA Profile","*.kda")], initialfile=PROFILE_FILE)

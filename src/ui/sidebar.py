@@ -23,7 +23,6 @@ class Sidebar(ctk.CTkFrame):
         self.select(0)
 
         ctk.CTkFrame(self, height=1, fg_color=C_BORDER).pack(fill="x", padx=20, pady=20, side="bottom")
-        ctk.CTkLabel(self, text="v1.0 - 2026", font=ctk.CTkFont("Segoe UI", 10), text_color=C_MUTED).pack(side="bottom", pady=(0,16))
 
     def select(self, idx):
         for i, b in enumerate(self._btns):

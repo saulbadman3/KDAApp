@@ -5,6 +5,7 @@ from src.config import PASSPHRASE
 from src.core.math_model import *
 from tkinter import messagebox, filedialog
 from src.core.profile_io import load_profile
+from datetime import datetime
 
 class AuthPage(ctk.CTkFrame):
     def __init__(self, master, app):
@@ -36,6 +37,10 @@ class AuthPage(ctk.CTkFrame):
         self.alpha_lbl.pack(side="left")
         self.clip = ctk.BooleanVar(value=True)
         ctk.CTkCheckBox(cfg, text="Remove outliers before comparing", variable=self.clip, font=ctk.CTkFont("Segoe UI", 12), fg_color=C_ACCENT, hover_color=C_ACCENT2,
+                        text_color=C_TEXT2).pack(anchor="w", padx=20, pady=(0,14))
+        
+        self.unusual_time = ctk.BooleanVar(value=False)
+        ctk.CTkCheckBox(cfg, text="Simulate unusual/night access time", variable=self.unusual_time, font=ctk.CTkFont("Segoe UI", 12), fg_color=C_ACCENT, hover_color=C_ACCENT2,
                         text_color=C_TEXT2).pack(anchor="w", padx=20, pady=(0,14))
 
         self.badge = StatusBadge(self)
@@ -92,6 +97,16 @@ class AuthPage(ctk.CTkFrame):
             return
 
         alpha = float(self.alpha_var.get())
+
+        current_hour = datetime.now().hour
+        is_night = current_hour >= 22 or current_hour < 6
+        
+        if self.unusual_time.get() or is_night:
+            alpha = min(alpha * 2.0, 0.40) 
+            security_alert = " [STRICT MODE: Unusual Time]"
+        else:
+            security_alert = ""
+
         n_feat = len(self.app.profile["means"])
 
         tau = threshold(n_feat, alpha)
@@ -107,7 +122,7 @@ class AuthPage(ctk.CTkFrame):
             text=(
                 f"Score (D): {score:.4f} | "
                 f"Threshold: {tau:.4f} | "
-                f"α={alpha:.2f}"
+                f"α={alpha:.3f}{security_alert}"
             )
         )
 

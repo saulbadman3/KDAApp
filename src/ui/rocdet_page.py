@@ -20,18 +20,18 @@ class RocDetPage(ctk.CTkFrame):
 
         pc = card(self)
         pc.pack(fill="both", expand=True)
-        self.fig = Figure(figsize=(8,4), dpi=96, facecolor="#1a1e35")
+        self.fig = Figure(figsize=(8,4), dpi=96, facecolor="#241a0e")
         self.ax_roc = self.fig.add_subplot(1, 2, 1)
         self.ax_det = self.fig.add_subplot(1, 2, 2)
         self._style()
         self.fig.tight_layout(pad=2)
         self.canvas = FigureCanvasTkAgg(self.fig, master=pc)
-        self.canvas.get_tk_widget().configure(bg="#1a1e35")
+        self.canvas.get_tk_widget().configure(bg="#241a0e")
         self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=4, pady=4)
 
     def _style(self):
         for ax, title, xl, yl in [(self.ax_roc,"ROC Curve","FPR","TPR (1 – FRR)"), (self.ax_det,"DET Curve","FAR","FRR")]:
-            ax.set_facecolor("#13162b")
+            ax.set_facecolor("#241a0e")
             ax.set_title(title, color=C_TEXT, fontsize=11, pad=8, fontweight="bold")
             ax.set_xlabel(xl, color=C_MUTED, fontsize=9)
             ax.set_ylabel(yl, color=C_MUTED, fontsize=9)

@@ -25,7 +25,7 @@ class StatusBadge(ctk.CTkLabel):
         self.idle()
 
     def idle(self):
-        self.configure(text="Awaiting input...", fg_color="#1e2235", text_color=C_MUTED)
+        self.configure(text="Awaiting input...", fg_color="#241a0e", text_color=C_MUTED)
 
     def granted(self):
         self.configure(text="ACCESS GRANTED", fg_color="#14532d", text_color="#4ade80")

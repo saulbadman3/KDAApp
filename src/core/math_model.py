@@ -1,4 +1,4 @@
-#src.core.math_model.py
+# src.core.math_model.py
 import numpy as np
 from scipy import stats
 
@@ -14,20 +14,32 @@ def build_profile(attempts):
     M_clipped = np.clip(M, lo, hi)
 
     mu = np.mean(M_clipped, axis=0)
-    
     std = np.std(M_clipped, axis=0)
-    std = np.maximum(std, 15.0) 
+    std = np.maximum(std, 15.0)
+
+    safe_mu = np.where(mu == 0, 1e-5, mu)
+    cv_per_feature = std / safe_mu
+    
+    CV_THRESHOLD = 0.30
+    feature_mask = np.where(cv_per_feature < CV_THRESHOLD, 1.0, 0.0)
+    
+    if np.sum(feature_mask) == 0:
+        best_indices = np.argsort(cv_per_feature)[:5]
+        feature_mask[best_indices] = 1.0
 
     M_norm = (M_clipped - mu) / std
-
-    cov = np.cov(M_norm, rowvar=False)
     
+    M_norm_filtered = M_norm * feature_mask
+
+    cov = np.cov(M_norm_filtered, rowvar=False)
     cov += np.eye(n) * 0.08  
 
     return {
         "means": mu.tolist(),
         "std": std.tolist(),
         "cov": cov.tolist(),
+        "feature_mask": feature_mask.tolist(),
+        "cv_values": cv_per_feature.tolist(),
         "N": N,
         "raw": M.tolist()
     }
@@ -36,6 +48,8 @@ def score_attempt(feats, profile, clip_outliers=False):
     mu = np.array(profile["means"])
     std = np.array(profile["std"])
     cov = np.array(profile["cov"])
+    
+    mask = np.array(profile.get("feature_mask", [1.0] * len(mu)))
 
     if clip_outliers and "raw" in profile:
         raw_data = np.array(profile["raw"])
@@ -44,14 +58,17 @@ def score_attempt(feats, profile, clip_outliers=False):
         feats = np.clip(feats, lo, hi)
 
     feats_norm = (feats - mu) / std
+    
+    feats_norm_filtered = feats_norm * mask
+    
     cov_inv = np.linalg.pinv(cov)
-    d2 = np.dot(np.dot(feats_norm, cov_inv), feats_norm)
+    d2 = np.dot(np.dot(feats_norm_filtered, cov_inv), feats_norm_filtered)
     
     return float(d2.item() if hasattr(d2, "item") else d2)
 
 def threshold(n_feat, alpha):
     theoretical_tau = float(stats.chi2.ppf(1 - alpha, df=n_feat))
-    return theoretical_tau * 1.2
+    return theoretical_tau
 
 def roc_det(legit, impost, pts=60):
     lo = min(legit + impost) * 0.8
