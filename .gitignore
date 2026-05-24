@@ -12,3 +12,6 @@ output/
 .vscode/
 *.7z
 *.json
+*.drawio
+*.bkp
+*.tmp

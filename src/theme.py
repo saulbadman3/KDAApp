@@ -1,3 +1,4 @@
+# src/theme.py
 class T:
     BG = "#0f0a07"
     PANEL = "#1a1208"

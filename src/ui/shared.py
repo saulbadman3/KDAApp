@@ -1,3 +1,4 @@
+# src/ui/shared.py
 import customtkinter as ctk
 from src.theme import *
 import time

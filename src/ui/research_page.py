@@ -1,3 +1,4 @@
+# src/ui/research_page.py
 import customtkinter as ctk
 from src.theme import *
 from src.config import MIN_TRAIN, MAX_TRAIN
@@ -84,6 +85,7 @@ class ResearchPage(ctk.CTkFrame):
         self.alpha_lbl.configure(text=f"α = {self.alpha_var.get():.2f}")
 
     def _submit(self):
+        """Captures input timings and categorizes the computed anomaly score into either the legitimate or impostor testing pool."""
         username = self.username_entry.get().strip()
         typed_password = self.entry.get()
 
@@ -97,6 +99,7 @@ class ResearchPage(ctk.CTkFrame):
             self.entry.reset()
             return
 
+        # Initialize session password structure requirement on the first valid entry
         if not self._target_password:
             if not store.verify(username, typed_password):
                 self.status.configure(text="Authentication failed: Invalid initial password.", text_color=C_DANGER)
@@ -120,6 +123,7 @@ class ResearchPage(ctk.CTkFrame):
             self.entry.reset()
             return
 
+        # Feature Extraction: Combine absolute holding times and relative sequential delays
         dwell = np.array([t["dwell"] for t in tims], dtype=float)
         flight = np.array([tims[i]["press_time"] - tims[i-1]["release_time"] for i in range(1, len(tims))], dtype=float)
         flight = np.maximum(flight, 0)
@@ -130,6 +134,7 @@ class ResearchPage(ctk.CTkFrame):
             self.entry.reset()
             return
 
+        # Map current trial vector to a Mahalanobis distance score against the active profile
         try:
             sc = score_attempt(feats, self.app.profile, clip_outliers=True)
         except Exception as e:
@@ -137,6 +142,7 @@ class ResearchPage(ctk.CTkFrame):
             self.entry.reset()
             return
 
+        # Route calculated metric into selected verification dataset pool
         if self.mode_var.get() == "Legitimate":
             self.legit_scores.append(sc)
             self.legit_badge.configure(text=f"Legit: {len(self.legit_scores)}")
@@ -149,6 +155,7 @@ class ResearchPage(ctk.CTkFrame):
         self.entry.reset()
 
     def _compute(self):
+        """Calculates FAR, FRR, error distributions, and determines Equal Error Rate (EER) boundaries."""
         n_legit = len(self.legit_scores)
         n_imp = len(self.impostor_scores)
 
@@ -166,9 +173,11 @@ class ResearchPage(ctk.CTkFrame):
         nf = len(self.app.profile["means"]) if self.app.profile else MIN_TRAIN
         thr = threshold(nf, alpha)
 
+        # Statistical evaluation: FAR (impostors accepted) vs FRR (legitimate users rejected)
         far = sum(1 for s in self.impostor_scores if s <= thr) / len(self.impostor_scores)
         frr = sum(1 for s in self.legit_scores if s > thr) / len(self.legit_scores)
 
+        # Generate a multidimensional curve matrix for ROC tracking data
         thrs, fars, frrs, _ = roc_det(self.legit_scores, self.impostor_scores, 100)
         self.app.roc_data = (self.legit_scores[:], self.impostor_scores[:])
         
@@ -180,11 +189,13 @@ class ResearchPage(ctk.CTkFrame):
                  f"FAR = {far:.4f} ({far*100:.2f}%)",
                  f"FRR = {frr:.4f} ({frr*100:.2f}%)"]
         
+        # Optimize boundary values to identify optimal operating thresholds
         valid_odd = [(t, f) for t, f, r in zip(thrs, fars, frrs) if r <= 0.07]
         if valid_odd:
             bt, bf = min(valid_odd, key=lambda x: x[1])
             lines.append(f"\n[Odd] min FAR, FRR<=7%:   thr={bt:.4f}   FAR={bf:.4f}")
 
+        # Locate intersection point to isolate Equal Error Rate intersection point
         ei = np.argmin(np.abs(fars - frrs))
         lines.append(f"EER (Equal Error Rate) = {(fars[ei] + frrs[ei]) / 2:.4f}")
         
@@ -195,6 +206,7 @@ class ResearchPage(ctk.CTkFrame):
         self.log.configure(state="disabled")
 
     def _clear(self):
+        """Flushes captured evaluation sets and unlocks the setup view components."""
         self.legit_scores.clear()
         self.impostor_scores.clear()
         self._target_password = None

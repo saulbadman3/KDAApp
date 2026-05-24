@@ -1,3 +1,4 @@
+# src/core/user_store.py
 import json, hashlib, os
 
 USERS_FILE = "users.json"
@@ -21,7 +22,6 @@ def register_user(username: str, password: str) -> bool:
         return False
     users[username] = {
         "password_hash": _hash(password),
-        "profile_path": None
     }
     save_users(users)
     return True
@@ -31,13 +31,3 @@ def verify(username: str, password: str) -> bool:
     if username not in users:
         return False
     return users[username]["password_hash"] == _hash(password)
-
-def get_profile_path(username: str) -> str | None:
-    users = load_users()
-    return users.get(username, {}).get("profile_path")
-
-def set_profile_path(username: str, path: str):
-    users = load_users()
-    if username in users:
-        users[username]["profile_path"] = path
-        save_users(users)

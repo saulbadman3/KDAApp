@@ -1,3 +1,4 @@
+# src/ui/sidebar.py
 import customtkinter as ctk
 from src.theme import *
 

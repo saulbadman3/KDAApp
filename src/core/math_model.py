@@ -1,4 +1,4 @@
-# src.core.math_model.py
+# src/core/math_model.py
 import numpy as np
 from scipy import stats
 
